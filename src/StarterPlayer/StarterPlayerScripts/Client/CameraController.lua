@@ -1,3 +1,4 @@
+local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService");
 local UserInputService = game:GetService("UserInputService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -21,28 +22,29 @@ CameraController._Connections = {}
 --// Methods
 --/ Private
 local function getMousePosition3D()
-	local camera = workspace.CurrentCamera
-	local mousePosition = UserInputService:GetMouseLocation()
+    local camera = workspace.CurrentCamera
+    local mousePosition = UserInputService:GetMouseLocation()
 
-	local unitRay = camera:ViewportPointToRay(mousePosition.X, mousePosition.Y)
+    local unitRay = camera:ViewportPointToRay(mousePosition.X, mousePosition.Y)
 
-	local maxDistance = 50
-	local direction = unitRay.Direction * maxDistance 
+    local minDistance = 25
+    local maxDistance = 50
+    local direction = unitRay.Direction * maxDistance 
 
-	local raycastParams = RaycastParams.new()
-	raycastParams.FilterDescendantsInstances = {workspace}
-	raycastParams.FilterType = Enum.RaycastFilterType.Include
+    local raycastParams = RaycastParams.new()
+    raycastParams.FilterDescendantsInstances = {workspace}
+    raycastParams.FilterType = Enum.RaycastFilterType.Include
 
-	local raycastResult = workspace:Raycast(unitRay.Origin, unitRay.Direction * maxDistance, raycastParams)
+    local raycastResult = workspace:Raycast(unitRay.Origin, unitRay.Direction * maxDistance, raycastParams)
 
-	if raycastResult then
-		local hitPosition = raycastResult.Position
-		local clampedDistance = math.min((hitPosition - camera.CFrame.Position).Magnitude, maxDistance)
-		return unitRay.Origin + unitRay.Direction * clampedDistance
-	else
-		return unitRay.Origin + direction
-	
-	end
+    if raycastResult then
+        local hitPosition = raycastResult.Position
+        local hitDistance = (hitPosition - camera.CFrame.Position).Magnitude
+        local clampedDistance = math.clamp(hitDistance, minDistance, maxDistance)
+        return unitRay.Origin + unitRay.Direction * clampedDistance
+    else
+        return unitRay.Origin + unitRay.Direction * maxDistance
+    end
 end
 
 local function quadraticLerp(a, b, t)
@@ -50,6 +52,23 @@ local function quadraticLerp(a, b, t)
 end
 
 --/ Public
+function CameraController:TweenCameraToCFrame(targetCFrame, duration)
+    local tweenInfo = TweenInfo.new(
+        duration, 
+        Enum.EasingStyle.Sine, 
+        Enum.EasingDirection.Out
+    )
+    local tweenGoal = { CFrame = targetCFrame }
+    local cameraTween = TweenService:Create(self.Camera, tweenInfo, tweenGoal)
+    
+	cameraTween.Completed:Connect(function(playbackState)
+        if playbackState == Enum.PlaybackState.Completed then
+            self.Camera.CameraType = Enum.CameraType.Custom
+        end
+    end)
+    cameraTween:Play()
+end
+
 function CameraController:GetCamera()
 	return self.Camera
 end
@@ -104,12 +123,12 @@ function CameraController:InitConnections()
 		end
 	end)
 	self._Connections.HoldShot = ClientSignals.HoldShot:Connect(function()
-		self.LastCustomCFrame = self.Camera.CFrame;
+		self.LastCustomCFrame = self.Camera.CFrame
 		self.Camera.CameraType = Enum.CameraType.Scriptable
 	end)
 	self._Connections.JumpRelease = ClientSignals.JumpRelease:Connect(function()
-		self.Camera.CameraType = Enum.CameraType.Custom
 		self.JumpShotRequest = false;
+		self:TweenCameraToCFrame(self.LastCustomCFrame, 0.75)
 	end)
 	self:Bind();
 end
@@ -124,7 +143,6 @@ function CameraController:KnitInit()
 end
 
 function CameraController:KnitStart()
-	
 	self.ActiveCharacter = CharacterController:GetCharacter()
 	self.Camera.CameraSubject = self.ActiveCharacter:FindFirstChild("Torso")
 
