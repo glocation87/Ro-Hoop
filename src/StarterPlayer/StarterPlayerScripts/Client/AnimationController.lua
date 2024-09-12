@@ -98,8 +98,9 @@ function AnimationController:InitConnections()
 		if (condition) then
 			local events = {
 				["HoldBall"] = function(paramString, animTrack)
-					animTrack:AdjustSpeed(0)
 					self.ActiveBallHolding = true
+					ClientSignals.HoldShot:Fire()
+					animTrack:AdjustSpeed(0)
 				end,
 				
 				["ReleaseBall"] = function(paramString, animTrack)

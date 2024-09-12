@@ -5,6 +5,7 @@ local ClientSignals = {
 	JumpRelease = Signal.new();
 	JumpShoot = Signal.new();
 	PlayTaunt = Signal.new();
+	HoldShot = Signal.new();
 	TransitionUI = Signal.new();
 }
 return ClientSignals

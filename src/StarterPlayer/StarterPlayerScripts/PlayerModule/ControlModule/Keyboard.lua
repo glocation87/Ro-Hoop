@@ -46,7 +46,7 @@ function Keyboard.new(CONTROL_ACTION_PRIORITY)
 	self.jumpDebounce = false
 	
 	self.debounceTimer = Timer.new(6)
-	self.releaseTimer = Timer.new(2)
+	self.releaseTimer = Timer.new(3.5)
 	return self
 end
 
