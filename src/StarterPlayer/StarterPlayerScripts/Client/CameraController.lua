@@ -21,29 +21,31 @@ CameraController._Connections = {}
 --// Methods
 --/ Private
 local function getMousePosition3D()
-	local camera = workspace.CurrentCamera
-	local mousePosition = UserInputService:GetMouseLocation()
+    local camera = workspace.CurrentCamera
+    local mousePosition = UserInputService:GetMouseLocation()
 
-	local unitRay = camera:ViewportPointToRay(mousePosition.X, mousePosition.Y)
+    local unitRay = camera:ViewportPointToRay(mousePosition.X, mousePosition.Y)
 
-	local maxDistance = 50
-	local direction = unitRay.Direction * maxDistance 
+    local minDistance = 25
+    local maxDistance = 50
+    local direction = unitRay.Direction * maxDistance 
 
-	local raycastParams = RaycastParams.new()
-	raycastParams.FilterDescendantsInstances = {workspace}
-	raycastParams.FilterType = Enum.RaycastFilterType.Include
+    local raycastParams = RaycastParams.new()
+    raycastParams.FilterDescendantsInstances = {workspace}
+    raycastParams.FilterType = Enum.RaycastFilterType.Include
 
-	local raycastResult = workspace:Raycast(unitRay.Origin, unitRay.Direction * maxDistance, raycastParams)
+    local raycastResult = workspace:Raycast(unitRay.Origin, unitRay.Direction * maxDistance, raycastParams)
 
-	if raycastResult then
-		local hitPosition = raycastResult.Position
-		local clampedDistance = math.min((hitPosition - camera.CFrame.Position).Magnitude, maxDistance)
-		return unitRay.Origin + unitRay.Direction * clampedDistance
-	else
-		return unitRay.Origin + direction
-	
-	end
+    if raycastResult then
+        local hitPosition = raycastResult.Position
+        local hitDistance = (hitPosition - camera.CFrame.Position).Magnitude
+        local clampedDistance = math.clamp(hitDistance, minDistance, maxDistance)
+        return unitRay.Origin + unitRay.Direction * clampedDistance
+    else
+        return unitRay.Origin + unitRay.Direction * maxDistance
+    end
 end
+
 
 local function quadraticLerp(a, b, t)
 	return a + (b - a) * (3 * t^2 - 2 * t^3)

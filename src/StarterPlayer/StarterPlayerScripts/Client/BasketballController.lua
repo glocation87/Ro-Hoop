@@ -42,9 +42,8 @@ local function calculateControlPos(start, _end)
     local vector = _end - start
     local distance = vector.Magnitude
     local direction = vector.Unit
-
-    -- Dynamically adjust the height based on the distance
-    local heightFactor = math.max(distance * 0.5, 1) -- Ensure height is significant even if distance is small
+	
+    local heightFactor = math.max(distance * 0.5, 1)
     return start + (direction * distance * 0.5) + Vector3.new(0, heightFactor, 0)
 end
 
