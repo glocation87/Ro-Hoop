@@ -1,5 +1,7 @@
+--//Locals
 local RunService = game:GetService("RunService");
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Debris = game:GetService("Debris")
 local Players = game:GetService("Players");
 local Knit = require(game:GetService("ReplicatedStorage").libs.Knit);
 local ClientSignals = require(ReplicatedStorage.util:WaitForChild("ClientSignals"));
@@ -12,6 +14,7 @@ local HoopObject = workspace:WaitForChild("Hoop")
 --//Constants
 local MAX_BALL_SPEED = 40
 local INITIAL_BALL_SPEED = 1 -- 30 being the max
+local VISUALIZER_STEP = 0.025
 --//Properties
 BasketballController.ActiveCharacter = nil;
 BasketballController.ActiveBall = nil;
@@ -89,6 +92,21 @@ local function calculateArcLength(steps, P0, P1, P2)
 	return length
 end
 
+local function spawnNeonBall(position)
+    local ball = Instance.new("Part")
+    ball.Size = Vector3.new(0.25, 0.25, 0.25)
+    ball.Position = position
+    ball.Shape = Enum.PartType.Ball
+    ball.Material = Enum.Material.Neon
+	ball.Transparency = 0.2
+    ball.BrickColor = BrickColor.new("White")
+    ball.Anchored = true
+    ball.CanCollide = false
+	ball.CanTouch = false
+    ball.Parent = workspace.Debris
+    Debris:AddItem(ball, 0.01)
+end
+
 --/Public
 function BasketballController:GetBall()
 	if (not self.ActiveCharacter) then 
@@ -124,6 +142,25 @@ function BasketballController:ShootBall()
 					self.Alpha = i
 				end	
 			end)
+		end)
+	end
+end
+
+function BasketballController:DrawCurve()
+	local basketball = self:GetBall()
+	while (self.VisualizeShot) do
+		RunService.Heartbeat:Wait()
+		self.InitialPos = basketball.Position
+		self.EndPos = CameraController:GetMouse3D()
+		self.ControlPos = calculateControlPos(self.InitialPos, self.EndPos)
+		task.spawn(function()
+			for t = 0.01, 1, VISUALIZER_STEP do
+				if (self.VisualizeShot == false) then
+					break
+				end
+				RunService.Heartbeat:Wait()
+				spawnNeonBall(quadraticBezier(t, self.InitialPos, self.ControlPos, self.EndPos))
+			end
 		end)
 	end
 end
@@ -175,10 +212,11 @@ function BasketballController:InitConnections()
 		self.JumpshotRequest = packet
 	end)
 	self._Connections.HoldShot = ClientSignals.HoldShot:Connect(function()
-	
+		self.VisualizeShot = true
+		self:DrawCurve()
 	end)
 	self._Connections.JumpRelease = ClientSignals.JumpRelease:Connect(function(packet)
-		
+		self.VisualizeShot = false
 	end)
 	self._Connections.JumpShoot = ClientSignals.JumpShoot:Connect(function(packet)
 		if (packet == "Shot") then

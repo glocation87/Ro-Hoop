@@ -86,7 +86,7 @@ function CameraController:Run(dt)
 		local rotateX = math.rad(-mouseY * rotationFactor)
 		local rotateY = math.rad(-mouseX * rotationFactor)
 
-		local pos = (self.Camera.CameraSubject.CFrame * CFrame.new(5, 1, 3)).Position
+		local pos = (humanoidRootPart.CFrame * CFrame.new(6, 1, 5)).Position
 		local direction = humanoidRootPart.CFrame.LookVector
 		
 		local cameraLookAt = CFrame.new(pos, pos + direction) 
