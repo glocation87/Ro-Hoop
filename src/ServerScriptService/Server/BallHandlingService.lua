@@ -30,7 +30,6 @@ function Service.Client:DetachPlayerBall(player)
 	basketBall.CanTouch = true
 	basketBall.Trail.Enabled = true
 	
-	
 	basketBall:SetNetworkOwner(player)
 	local conn
 	local initialHit = nil
@@ -53,10 +52,8 @@ function Service.Client:DetachPlayerBall(player)
 			end)
 			part.Sparks:Emit(90)
 			conn:Disconnect()
-			print("got hoop")
 		end
 	end)
-	--enableBasketballAnim(character, false)
 	return true
 end
 

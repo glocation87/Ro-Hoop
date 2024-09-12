@@ -103,7 +103,7 @@ function CameraController:Run(dt)
 
 		local rotationFactor = 0.01 
 		local rotateX = math.rad(-mouseY * rotationFactor)
-		local rotateY = math.rad(-mouseX * rotationFactor)
+		local rotateY = math.rad(-mouseX * rotationFactor * 3)
 
 		local pos = (humanoidRootPart.CFrame * CFrame.new(6, 1, 5)).Position
 		local direction = humanoidRootPart.CFrame.LookVector
