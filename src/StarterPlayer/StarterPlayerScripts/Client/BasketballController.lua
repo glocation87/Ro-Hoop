@@ -39,9 +39,13 @@ local function debugPoints(p1, p2, p3)
 end
 
 local function calculateControlPos(start, _end)
-	local vector = _end - start
-	local direction, magnitude = vector.Unit, vector.Magnitude * 0.5
-	return start + (direction * magnitude) + Vector3.new(0, magnitude*0.5, 0)
+    local vector = _end - start
+    local distance = vector.Magnitude
+    local direction = vector.Unit
+
+    -- Dynamically adjust the height based on the distance
+    local heightFactor = math.max(distance * 0.5, 1) -- Ensure height is significant even if distance is small
+    return start + (direction * distance * 0.5) + Vector3.new(0, heightFactor, 0)
 end
 
 function quadraticLerp(a, b, t)
@@ -104,10 +108,20 @@ local function spawnNeonBall(position)
     ball.CanCollide = false
 	ball.CanTouch = false
     ball.Parent = workspace.Debris
-    Debris:AddItem(ball, 0.01)
+    Debris:AddItem(ball, 0.007)
 end
 
 --/Public
+function BasketballController:Rebound()
+	self._Connections.BallTouched:Disconnect()
+	self.BallInMotion = false
+	self.Alpha = 0
+	self.BallSpeed = INITIAL_BALL_SPEED
+	local lastVelocityMagnitude = self.ActiveBall.AssemblyLinearVelocity.Magnitude
+	self.ActiveBall.AssemblyLinearVelocity = self.ActiveBall.AssemblyLinearVelocity.Unit * math.clamp(lastVelocityMagnitude, 0, (self.InitialPos - self.EndPos).Magnitude)
+end
+
+
 function BasketballController:GetBall()
 	if (not self.ActiveCharacter) then 
 		return nil
@@ -126,10 +140,9 @@ function BasketballController:ShootBall()
 	local humanoidRootPart = self.ActiveCharacter.HumanoidRootPart
 	if (basketball and humanoidRootPart) then
 		self.ActiveBall = basketball
-		self.InitialPos = basketball.Position
-		self.EndPos = HoopObject.Position
-		self.ControlPos = calculateControlPos(self.InitialPos, self.EndPos)
 		BasketballService:DetachPlayerBall():andThen(function()
+			self.InitialPos = basketball.Position
+			self.ControlPos = calculateControlPos(self.InitialPos, self.EndPos)
 			self.BallInMotion = true
 			self:BindTouchedEvent(self.ActiveBall)
 			task.spawn(function()
@@ -141,6 +154,7 @@ function BasketballController:ShootBall()
 					task.wait()
 					self.Alpha = i
 				end	
+				self:Rebound()
 			end)
 		end)
 	end
@@ -148,11 +162,12 @@ end
 
 function BasketballController:DrawCurve()
 	local basketball = self:GetBall()
+	self.InitialPos = basketball.Position
+	self.EndPos = CameraController:GetMouse3D()
+	self.ControlPos = calculateControlPos(self.InitialPos, self.EndPos)
 	while (self.VisualizeShot) do
 		RunService.Heartbeat:Wait()
-		self.InitialPos = basketball.Position
-		self.EndPos = CameraController:GetMouse3D()
-		self.ControlPos = calculateControlPos(self.InitialPos, self.EndPos)
+		
 		task.spawn(function()
 			for t = 0.01, 1, VISUALIZER_STEP do
 				if (self.VisualizeShot == false) then
@@ -162,17 +177,15 @@ function BasketballController:DrawCurve()
 				spawnNeonBall(quadraticBezier(t, self.InitialPos, self.ControlPos, self.EndPos))
 			end
 		end)
+		self.InitialPos = basketball.Position
+		self.EndPos = CameraController:GetMouse3D()
+		self.ControlPos = calculateControlPos(self.InitialPos, self.EndPos)
 	end
 end
 
 function BasketballController:BindTouchedEvent(object)
 	self._Connections.BallTouched = object.Touched:Connect(function(part)
-		self._Connections.BallTouched:Disconnect()
-		self.BallInMotion = false
-		self.Alpha = 0
-		self.BallSpeed = INITIAL_BALL_SPEED
-		local lastVelocityMagnitude = self.ActiveBall.AssemblyLinearVelocity.Magnitude
-		self.ActiveBall.AssemblyLinearVelocity = self.ActiveBall.AssemblyLinearVelocity.Unit * math.clamp(lastVelocityMagnitude, 0, (self.InitialPos - self.EndPos).Magnitude)
+		self:Rebound()
 	end)
 end
 

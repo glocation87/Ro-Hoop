@@ -108,8 +108,9 @@ function CameraController:InitConnections()
 		self.Camera.CameraType = Enum.CameraType.Scriptable
 	end)
 	self._Connections.JumpRelease = ClientSignals.JumpRelease:Connect(function()
-		self.Camera.CameraType = Enum.CameraType.Custom
 		self.JumpShotRequest = false;
+		task.wait(1)
+		--self.Camera.CameraType = Enum.CameraType.Custom
 	end)
 	self:Bind();
 end
