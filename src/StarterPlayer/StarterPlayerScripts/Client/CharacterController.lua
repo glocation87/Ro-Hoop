@@ -100,7 +100,6 @@ function CharacterController:InitConnections()
 		self.MousePosition = Vector3.new()
 	end)
 	self._Connections.HoldShot = ClientSignals.HoldShot:Connect(function()
-		print('yeah ok')
 		self:AlignPlayerCharacter()
 	end)
 end

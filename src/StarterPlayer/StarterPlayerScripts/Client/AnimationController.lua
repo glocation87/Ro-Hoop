@@ -22,6 +22,7 @@ AnimationController._Connections = {}
 --/ Public
 -- These are interfaced for external use
 function AnimationController:PlayWithEvents(name, transition, arr) 
+	local events = {}
 	local animTrack = self._LoadedAnimations[name]
 	if not animTrack then
 		return warn("Animation not found")
@@ -34,10 +35,14 @@ function AnimationController:PlayWithEvents(name, transition, arr)
 	self.CurrentAnimTrack = animTrack
 	self.CurrentAnimTrack:Play(transition)
 	self.CurrentAnimTrack.Ended:Connect(function()
+		for index, event in pairs(events) do
+			event:Disconnect()
+		end
 		self.CurrentAnimTrack = nil
 	end)
 	for eventName, callback in pairs(arr) do
-		self.CurrentAnimTrack:GetMarkerReachedSignal(eventName):Connect(function(paramString) 
+		local index = #events + 1
+		events[index] = self.CurrentAnimTrack:GetMarkerReachedSignal(eventName):Connect(function(paramString) 
 			callback(paramString, self.CurrentAnimTrack)
 		end)
 	end
